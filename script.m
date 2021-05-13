@@ -33,13 +33,13 @@ disp('Part3')
 %%
 % build edge matrix
 r = linspace(0,0.2685,1000);
-E = {};
+E = zeros(l);
 for i = 1:length(r)
     T = double((D>0) & (D<r(i)));
     T = T + T';
-    E(i).X = sum(T);
+    E(i,:) = sum(T);
 end
-
+clearvars T
 %%
 for k = 1:l
     pk = zeros(1,1000);
