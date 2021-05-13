@@ -8,24 +8,28 @@ for i = 1:length(Fi)
     inty = [inty,intfreqY];
     intz = [intz,intfreqZ];
 end
-clearvars -except intx inty intz
+feature(1:200,:) = intx;
+feature(201:400,:) = inty;
+feature(401:600,:) = intz;
+clearvars -except feature
 disp('Part1')
 
 %%
 % do kmeans for 4 clustering
 rng(1);
-[idx,cx] = kmeans(intx,4);
-[idy,cy] = kmeans(inty,4);
-[idz,cz] = kmeans(intz,4);
+[idx,cx] = kmeans(feature(1:200,:),4);
+[idy,cy] = kmeans(feature(201:400,:),4);
+[idz,cz] = kmeans(feature(401:600,:),4);
+[id,c] = kmeans(feature,4);
 disp('Part2')
 
 %%
 % build the distance matrix(D)
-l = length(intx);
+l = length(feature);
 D = zeros(l);
 for i =1:l
     for j = i:l
-        D(i,j) = norm(intx(:,i)-intx(:,j));
+        D(i,j) = norm(feature(:,i)-feature(:,j));
     end
 end
 disp('Part3')
