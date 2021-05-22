@@ -1,6 +1,6 @@
 %%
 % load data file and save each info
-Fi = dir([pwd filesep '*.mat']);
+Fi = dir([pwd filesep '主機*.mat']);
 intx = [];inty = [];intz = [];
 for i = 1:length(Fi)
     load(Fi(i).name);
@@ -13,7 +13,7 @@ feature(201:400,:) = inty;
 feature(401:600,:) = intz;
 clearvars -except feature
 disp('Part1')
-
+pause(1)
 %%
 % do kmeans for 4 clustering
 rng(1);
@@ -25,6 +25,8 @@ disp('Part2')
 
 %%
 % build the distance matrix(D)
+%{
+%wasted fk= =
 l = length(feature);
 D = zeros(l);
 for i =1:l
@@ -32,28 +34,52 @@ for i =1:l
         D(i,j) = norm(feature(:,i)-feature(:,j));
     end
 end
+%}
+D = pdist(feature');
+D = squareform(D);
 disp('Part3')
 
 %%
 % build edge matrix
-r = linspace(0,0.2685,1000);
-E = zeros(r,l);
+r = linspace(0,0.1,1000);
+r1 = linspace(0,0.2685,1000);
+E = zeros(length(r),l);
 for i = 1:length(r)
     T = double((D>0) & (D<r(i)));
     T = T + T';
     E(i,:) = sum(T);
 end
 clearvars T
+
 %%
-for k = 1:l
-    pk = zeros(1,1000);
-    for i = 1:length(E)
-        T = E(i).X;
-        pk(i) = T(k);
-    end
-    figure;
-    plot(r,pk);
-    title(sprintf('Point %d',k));
-    print(sprintf('point%d.jpg',k),'-djpeg');
-    close;
+%knnsearch epsilon
+A = feature;
+datanum = size(feature,1);
+D = zeros(datanum,1);
+[~,dist] = knnsearch(A(2:datanum,:),A(1,:));
+D(1) = dist;
+for i = 2:datanum
+    [~,dist] = knnsearch(A([1:i-1,i+1:datanum],:),A(i,:));
+    D(i) = dist;
 end
+[sortD,sortDid] = sort(D,'descend');
+plot( (1:1:datanum)',sortD,'r+-','Linewidth',2);
+
+%%
+%use dbscan to find clusterings
+[id,c] = dbscan(feature',0.009,50);
+
+%%
+%test dbscan min. pts.
+%find that can set min pt = 190~250
+% 0.0079<eps<0.01 , not equal 0.01
+clearvars -except feature
+M = zeros(100,1);
+m = zeros(100,1);
+for i=1:100
+    [id,c] = dbscan(feature,0.009,250-i);
+    M(i) = max(id);
+    m(i) = sum(id==-1);
+end
+
+%%
