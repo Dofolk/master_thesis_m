@@ -1,19 +1,21 @@
 %%
 % load data file and save each info
-Fi = dir([pwd filesep '*.mat']);
-intx = [];inty = [];intz = [];
+Fi = dir([pwd filesep '主機*.mat']);
+intx = [];inty = [];intz = [];N = [];
 for i = 1:length(Fi)
     load(Fi(i).name);
-    intx = [intx,intfreqX];
-    inty = [inty,intfreqY];
-    intz = [intz,intfreqZ];
+    intx = [intx,intfreqX(:,T1)];
+    inty = [inty,intfreqY(:,T1)];
+    intz = [intz,intfreqZ(:,T1)];
+    N = [N,N_original];
 end
 feature(1:200,:) = intx;
 feature(201:400,:) = inty;
 feature(401:600,:) = intz;
+feature(601,:) = N;
 clearvars -except feature
 disp('Part1')
-pause(1)
+pause(3)
 %%
 % do kmeans for 4 clustering
 rng(1);
@@ -25,6 +27,8 @@ disp('Part2')
 
 %%
 % build the distance matrix(D)
+%{
+%wasted fk= =
 l = length(feature);
 D = zeros(l);
 for i =1:l
@@ -32,6 +36,9 @@ for i =1:l
         D(i,j) = norm(feature(:,i)-feature(:,j));
     end
 end
+%}
+D = pdist(feature');
+D = squareform(D);
 disp('Part3')
 
 %%
@@ -45,3 +52,36 @@ for i = 1:length(r)
     E(i,:) = sum(T);
 end
 clearvars T
+
+%%
+%knnsearch epsilon
+A = feature;
+datanum = size(feature,1);
+D = zeros(datanum,1);
+[~,dist] = knnsearch(A(2:datanum,:),A(1,:));
+D(1) = dist;
+for i = 2:datanum
+    [~,dist] = knnsearch(A([1:i-1,i+1:datanum],:),A(i,:));
+    D(i) = dist;
+end
+[sortD,sortDid] = sort(D,'descend');
+plot( (1:1:datanum)',sortD,'r+-','Linewidth',2);
+
+%%
+%use dbscan to find clusterings
+[id,c] = dbscan(feature',0.009,50);
+
+%%
+%test dbscan min. pts.
+%find that can set min pt = 190~250
+% 0.0079<eps<0.01 , not equal 0.01
+clearvars -except feature
+M = zeros(100,1);
+m = zeros(100,1);
+for i=1:100
+    [id,c] = dbscan(feature,0.009,250-i);
+    M(i) = max(id);
+    m(i) = sum(id==-1);
+end
+
+%%
