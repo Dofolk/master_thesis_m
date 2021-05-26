@@ -4,9 +4,9 @@ close all
 diary on
 
 % parameters
-dirnum = 'autotest';
-start_date = '2020_2_1';
-end_date   = '2020_2_1';
+dirnum = '¥D¾÷2020.01';
+start_date = '2020_1_1';
+end_date   = '2020_1_31';
 Sample_Rate = 400;
 Sample_Period = 300;
 Amp_max = 0.01;
@@ -94,7 +94,7 @@ for dd = datenum(start_date):datenum(end_date)
 %                 eval(sprintf('movefile %s Problem_data',Zfile(1:75)));
 %                 continue
 %             end
-
+    %data error catch=============================================
             epy_control = 0;
             if(isempty(t_x))
                 fprintf('%s has no data. \n',[B{13} '/' B{14} ' ' num2str(mod(str2num(B{16}),12)+c) ':' B{17} ':' BS{1} '-X']);
@@ -115,8 +115,9 @@ for dd = datenum(start_date):datenum(end_date)
             if epy_control
                 continue;
             end
-
-
+    %=====================================================================
+    
+    % index error catch===================================================
             if ((min(t_x) > Sample_Period*Sample_Rate) && (max(t_x) < 1e+9) )
                 tm = min(t_x);
                 t_x = t_x - tm;
@@ -132,7 +133,7 @@ for dd = datenum(start_date):datenum(end_date)
                 t_z = t_z - tm;
                 fprintf('%s has time index problem. \n',Zfile);
             end
-            
+    %=====================================================================
             t_x(t_x>Sample_Period*Sample_Rate+10)=[];
             t_y(t_y>Sample_Period*Sample_Rate+10)=[];
             t_z(t_z>Sample_Period*Sample_Rate+10)=[];
@@ -145,45 +146,61 @@ for dd = datenum(start_date):datenum(end_date)
             Amp_meanY = [Amp_meanY; mean(Y)]; Amp_varY = [Amp_varY; var(Y)];
             Amp_meanZ = [Amp_meanZ; mean(Z)]; Amp_varZ = [Amp_varZ; var(Z)];
             
-            t = interp1(t_x,t_x,(min(t_x):max(t_x))');         
-            X = interp1(t_x,X,(min(t_x):max(t_x))');
-            Y = interp1(t_y,Y,(min(t_y):max(t_y))');
-            Z = interp1(t_z,Z,(min(t_z):max(t_z))');
+            %t = interp1(t_x,t_x,(min(t_x):max(t_x))');         
+            %X = interp1(t_x,X,(min(t_x):max(t_x))');
+            %Y = interp1(t_y,Y,(min(t_y):max(t_y))');
+            %Z = interp1(t_z,Z,(min(t_z):max(t_z))');
             
-            tA = [tA; double(t(:))/86400/Sample_Rate+t1];
+            %tA = [tA; double(t(:))/86400/Sample_Rate+t1];
+            tA = [tA; double(t_x)/86400/Sample_Rate+t1];
             XA = [XA; X]; Q3X = [Q3X; quantile(X,1-r_normal)]; Q1X = [Q1X; quantile(X,r_normal)];
             YA = [YA; Y]; Q3Y = [Q3Y; quantile(Y,1-r_normal)]; Q1Y = [Q1Y; quantile(Y,r_normal)];
             ZA = [ZA; Z]; Q3Z = [Q3Z; quantile(Z,1-r_normal)]; Q1Z = [Q1Z; quantile(Z,r_normal)];
             
-%             [u,l] = envelope(Z,5,'peak');
-%             UE = [UE;u];
-%             LE = [LE;l];        
+%            [u,l] = envelope(Z,5,'peak');
+%            UE = [UE;u];
+%            LE = [LE;l];        
 
-            T = double(t)/Sample_Rate/86400+t1;
-            N = length(t); NA = [NA; N];
-            TT = N/Sample_Rate;
-            f  = 1/TT:1/TT:(Sample_Rate/2); FA(k).t = t1; FA(k).f = f;
-            j  = find(f0>1/TT,1,'first');
+            %T = double(t)/Sample_Rate/86400+t1;
+            %N = length(t); NA = [NA; N];
+            %TT = N/Sample_Rate;
+            %f  = 1/TT:1/TT:(Sample_Rate/2); FA(k).t = t1; FA(k).f = f;
+            N = min([length(t_x),length(t_y),length(t_z)]); NA = [NA; N];
+            f = 1:1:(Sample_Rate/2);
+            %j  = find(f0>1/TT,1,'first');
             
-            FX  = zeros(size(f0));          
-            F = fft(X)/(N/2);       FA(k).X = abs(F(2:(1+length(f))));
-            FX(j:end) = interp1(f,abs(F(2:(1+length(f)))),f0(j:end),'nearest');
-            FX(isnan(FX)) = 0;
-            FX2 = [FX2, FX];
-            EX = [EX;sqrt(sum(FX.^2))];
+            %FX  = zeros(size(f0));
+            %F = fft(X)/(N/2);
+            %FA(k).X = abs(F(2:(1+length(f))));
+            %FX(j:end) = interp1(f,abs(F(2:(1+length(f)))),f0(j:end),'nearest');
+            %FX(isnan(FX)) = 0;
+            %FX2 = [FX2, FX];
+            FX = zeros(size(X));
+            FX = nufft(X,(t_x./Sample_Rate),f) / (length(t_x)/2);
+            FA(k).X = abs(FX);
+            FX2 = [FX2, abs(FX)];
+            EX = [EX;sqrt(sum(abs(FX).^2))];
             
-            FY = zeros(size(f0));
-            F = fft(Y)/(N/2);       FA(k).Y = abs(F(2:(1+length(f))));
-            FY(j:end) = interp1(f,abs(F(2:(1+length(f)))),f0(j:end),'nearest');
-            FY(isnan(FY)) = 0;
-            FY2 = [FY2, FY];
+            %FY = zeros(size(f0));
+            %F = fft(Y)/(N/2);
+            %FA(k).Y = abs(F(2:(1+length(f))));
+            %FY(j:end) = interp1(f,abs(F(2:(1+length(f)))),f0(j:end),'nearest');
+            %FY(isnan(FY)) = 0;
+            %FY2 = [FY2, FY];
+            FY = zeros(size(Y));
+            FY = nufft(Y,(t_y./Sample_Rate),f) / (length(t_y)/2);
+            FA(k).Y = abs(FY);
+            FY2 = [FY2, abs(FY)];
             EY = [EY;sqrt(sum(FY.^2))];
             
-            FZ = zeros(size(f0));
-            F = fft(Z)/(N/2);       FA(k).Z = abs(F(2:(1+length(f))));
-            FZ(j:end) = interp1(f,abs(F(2:(1+length(f)))),f0(j:end),'nearest');
-            FZ(isnan(FZ)) = 0;
-            FZ2 = [FZ2, FZ];
+            %FZ = zeros(size(f0));
+            %F = fft(Z)/(N/2);
+            %FA(k).Z = abs(F(2:(1+length(f))));
+            %FZ(j:end) = interp1(f,abs(F(2:(1+length(f)))),f0(j:end),'nearest');
+            %FZ(isnan(FZ)) = 0;
+            FZ = zeros(size(Z));
+            FZ = nufft(Z,(t_z./Sample_Rate),f) / (length(t_z)/2);
+            FZ2 = [FZ2, abs(FZ)];
             EZ = [EZ;sqrt(sum(FZ.^2))];
             
             tt(k) = t1;
@@ -212,9 +229,10 @@ for dd = datenum(start_date):datenum(end_date)
     % make all figures,
     % figure 1-3, time-frequency for X, Y, Z
     if ~isempty(tt)
-        %{
+        
         figure(1);
-        imagesc(tt,f0,FX2);
+        imagesc(tt,f,FX2);
+        %imagesc(tt,f0,FX2);
         datetick('x','HH:MM');
         caxis([0,Amp_max]);
         colorbar;
@@ -225,7 +243,8 @@ for dd = datenum(start_date):datenum(end_date)
         print([dirnum '-' date_string '_X.jpg'],'-djpeg')
         
         figure(2);
-        imagesc(tt,f0,FY2);
+        imagesc(tt,f,FY2);
+        %imagesc(tt,f0,FY2);
         datetick('x','HH:MM');
         caxis([0,Amp_max]);
         colorbar;
@@ -236,7 +255,8 @@ for dd = datenum(start_date):datenum(end_date)
         print([dirnum '-' date_string '_Y.jpg'],'-djpeg')
         
         figure(3);
-        imagesc(tt,f0,FZ2);
+        imagesc(tt,f,FZ2);
+        %imagesc(tt,f0,FZ2);
         datetick('x','HH:MM');
         caxis([0,Amp_max]);
         colorbar;
@@ -308,8 +328,11 @@ for dd = datenum(start_date):datenum(end_date)
         axis([ax(1), min([ax(2),ceil(ax(1)+1/86400)]), 0, 1.2]); 
         %axis([ax(1), min([ax(2),ceil(ax(1)+1/86400)]), 0, 1]);    
         print([dirnum '-' date_string '_N.jpg'],'-djpeg')
-        %}
-        intfreqX = [];intfreqY = [];intfreqZ = [];
+        %{
+        intfreqX = mean(FX2,2);
+        intfreqY = mean(FY2,2);
+        intfreqZ = mean(FZ2,2);
+        
         for i = 1:199
             intfreqX = [intfreqX; mean(FX2((i*300-10:i*300+10),:))];
             intfreqY = [intfreqY; mean(FY2((i*300-10:i*300+10),:))];
@@ -323,9 +346,13 @@ for dd = datenum(start_date):datenum(end_date)
         intfreqX2 = [intfreqX2; FX2(300:300:60000,:)];
         intfreqY2 = [intfreqY2; FY2(300:300:60000,:)];
         intfreqZ2 = [intfreqZ2; FZ2(300:300:60000,:)];
+        %}
         
+        intfreqX = FX2;
+        intfreqY = FY2;
+        intfreqZ = FZ2;
         % save all data 
-        %eval(sprintf('save %s-%s-%s.mat tt f0 FX2 FY2 FZ2 tA XA YA ZA',dirnum,date_string,'basicinfo'));
+        eval(sprintf('save %s-%s-%s.mat tt f0 FX2 FY2 FZ2 tA XA YA ZA',dirnum,date_string,'basicinfo'));
         eval(sprintf('save %s-%s-%s.mat EX EY EZ Amp_meanX Amp_meanY Amp_meanZ Amp_varX Amp_varY Amp_varZ intfreqX intfreqY intfreqZ N_original',dirnum,date_string,'features'));
     end
 end
