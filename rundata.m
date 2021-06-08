@@ -1,20 +1,21 @@
+%run all data
+%fft version and without empty checking
+%less commment
+
 clear
 close all
 % record output messages
 diary on
 
 % parameters
-dirnum = '¥D¾÷2020.01';
+dirnum = 'ä¸»æ©Ÿ2020.01';
 start_date = '2020_1_1';
-end_date   = '2020_1_31';
+end_date   = '2020_1_1';
 Sample_Rate = 400;
 Sample_Period = 300;
 Amp_max = 0.01;
 r_normal = 0.001;
 f0 = (1/Sample_Period:1/Sample_Period:(Sample_Rate/2))';
-% MX = 1.9100e-04;
-% MY = 1.4870e-04;
-% MZ = 1.5211e-04;
 
 % program start
 dir1 = [dirnum '/'];
@@ -47,7 +48,6 @@ for dd = datenum(start_date):datenum(end_date)
     Amp_meanY = []; Amp_varY = [];
     Amp_meanZ = []; Amp_varZ = [];
     N_original = [];
-%     UE = []; LE = [];
     if ~isempty(Fi)
         wbar = waitbar(0, 'wbar', 'name', 'Read files');
         for k=1:length(Fi)
@@ -60,7 +60,7 @@ for dd = datenum(start_date):datenum(end_date)
 
             B = textsplit(Xfile,'_');
             BS = textsplit(B{18},'.');
-            if B{15}(1) == '¤U'
+            if B{15}(1) == 'ä¸‹'
                 c = 12;
             else
                 c = 0;
@@ -78,51 +78,6 @@ for dd = datenum(start_date):datenum(end_date)
             else
                 t_z = t_x; Z = zeros(size(X));
             end
-            
-%             if isempty(X)
-%                 fprintf('%s has data problem.',Xfile);
-%                 eval(sprintf('movefile %s Problem_data',Xfile(1:75)));
-%                 continue;
-%             end
-%             if isempty(Y)
-%                 fprintf('%s has data problem.',Yfile);
-%                 eval(sprintf('movefile %s Problem_data',Yfile(1:75)));
-%                 continue
-%             end
-%             if isempty(Z)
-%                 fprintf('%s has data problem.',Zfile);
-%                 eval(sprintf('movefile %s Problem_data',Zfile(1:75)));
-%                 continue
-%             end
-    %data error catch=============================================
-            epy_control = 0;
-            if(isempty(t_x))
-                fprintf('%s has no data. \n',[B{13} '/' B{14} ' ' num2str(mod(str2num(B{16}),12)+c) ':' B{17} ':' BS{1} '-X']);
-                epy_control = 1;
-                filename = ['D:' filesep '¾_°Ê¸ê®Æ' filesep dirnum filesep Xfile];
-                problemfolder = ['D:' filesep '¾_°Ê¸ê®Æ' filesep dirnum filesep 'Problems'];
-                movefile(Xfile,'Problem_data');
-            end
-            if(isempty(t_y))
-                fprintf('%s has no data. \n',[B{13} '/' B{14} ' ' num2str(mod(str2num(B{16}),12)+c) ':' B{17} ':' BS{1} '-Y']);
-                epy_control = 1;
-                filename = ['D:' filesep '¾_°Ê¸ê®Æ' filesep dirnum filesep Yfile];
-                problemfolder = ['D:' filesep '¾_°Ê¸ê®Æ' filesep dirnum filesep 'Problems'];
-                movefile(Yfile,'Problem_data');
-            end
-            if(isempty(t_z))
-                fprintf('%s has no data. \n',[B{13} '/' B{14} ' ' num2str(mod(str2num(B{16}),12)+c) ':' B{17} ':' BS{1} '-Z']);
-                epy_control = 1;
-                filename = ['D:' filesep '¾_°Ê¸ê®Æ' filesep dirnum filesep Zfile];
-                problemfolder = ['D:' filesep '¾_°Ê¸ê®Æ' filesep dirnum filesep 'Problems'];
-                movefile(Zfile,'Problem_data');
-            end
-            
-            if epy_control
-                continue;
-            end
-            
-    %=====================================================================
     
     % index error catch===================================================
             if ((min(t_x) > Sample_Period*Sample_Rate) && (max(t_x) < 1e+9) )
@@ -153,58 +108,26 @@ for dd = datenum(start_date):datenum(end_date)
             Amp_meanY = [Amp_meanY; mean(Y)]; Amp_varY = [Amp_varY; var(Y)];
             Amp_meanZ = [Amp_meanZ; mean(Z)]; Amp_varZ = [Amp_varZ; var(Z)];
             
-            %t = interp1(t_x,t_x,(min(t_x):max(t_x))');         
-            %X = interp1(t_x,X,(min(t_x):max(t_x))');
-            %Y = interp1(t_y,Y,(min(t_y):max(t_y))');
-            %Z = interp1(t_z,Z,(min(t_z):max(t_z))');
-            
-            %tA = [tA; double(t(:))/86400/Sample_Rate+t1];
             tA = [tA; double(t_x)/86400/Sample_Rate+t1];
             XA = [XA; X]; Q3X = [Q3X; quantile(X,1-r_normal)]; Q1X = [Q1X; quantile(X,r_normal)];
             YA = [YA; Y]; Q3Y = [Q3Y; quantile(Y,1-r_normal)]; Q1Y = [Q1Y; quantile(Y,r_normal)];
             ZA = [ZA; Z]; Q3Z = [Q3Z; quantile(Z,1-r_normal)]; Q1Z = [Q1Z; quantile(Z,r_normal)];
             
-%            [u,l] = envelope(Z,5,'peak');
-%            UE = [UE;u];
-%            LE = [LE;l];        
-
-            %T = double(t)/Sample_Rate/86400+t1;
-            %N = length(t); NA = [NA; N];
-            %TT = N/Sample_Rate;
-            %f  = 1/TT:1/TT:(Sample_Rate/2); FA(k).t = t1; FA(k).f = f;
             N = min([length(t_x),length(t_y),length(t_z)]); NA = [NA; N];
             f = 1:1:(Sample_Rate/2);
-            %j  = find(f0>1/TT,1,'first');
             
-            %FX  = zeros(size(f0));
-            %F = fft(X)/(N/2);
-            %FA(k).X = abs(F(2:(1+length(f))));
-            %FX(j:end) = interp1(f,abs(F(2:(1+length(f)))),f0(j:end),'nearest');
-            %FX(isnan(FX)) = 0;
-            %FX2 = [FX2, FX];
             FX = zeros(size(X));
             FX = nufft(X,(t_x./Sample_Rate),f) / (length(t_x)/2);
             FA(k).X = abs(FX);
             FX2 = [FX2, abs(FX)];
             EX = [EX;sqrt(sum(abs(FX).^2))];
             
-            %FY = zeros(size(f0));
-            %F = fft(Y)/(N/2);
-            %FA(k).Y = abs(F(2:(1+length(f))));
-            %FY(j:end) = interp1(f,abs(F(2:(1+length(f)))),f0(j:end),'nearest');
-            %FY(isnan(FY)) = 0;
-            %FY2 = [FY2, FY];
             FY = zeros(size(Y));
             FY = nufft(Y,(t_y./Sample_Rate),f) / (length(t_y)/2);
             FA(k).Y = abs(FY);
             FY2 = [FY2, abs(FY)];
             EY = [EY;sqrt(sum(abs(FY).^2))];
             
-            %FZ = zeros(size(f0));
-            %F = fft(Z)/(N/2);
-            %FA(k).Z = abs(F(2:(1+length(f))));
-            %FZ(j:end) = interp1(f,abs(F(2:(1+length(f)))),f0(j:end),'nearest');
-            %FZ(isnan(FZ)) = 0;
             FZ = zeros(size(Z));
             FZ = nufft(Z,(t_z./Sample_Rate),f) / (length(t_z)/2);
             FZ2 = [FZ2, abs(FZ)];
@@ -226,16 +149,9 @@ for dd = datenum(start_date):datenum(end_date)
         fprintf('No file in %s with date %s\n',dirnum, date_string);
     end
     
-%     FX2(FX2>MX) = FX2(FX2>MX)-MX;
-%     FX2(FX2<=MX) = 0;
-%     FY2(FY2>MY) = FY2(FY2>MY)-MY;
-%     FY2(FY2<=MY) = 0;
-%     FZ2(FZ2>MZ) = FZ2(FZ2>MZ)-MZ;
-%     FZ2(FZ2<=MZ) = 0;
-    
-    % make all figures,
     % figure 1-3, time-frequency for X, Y, Z
     if ~isempty(tt)
+        %{
         figure(1);
         imagesc(tt,f,FX2);
         %imagesc(tt,f0,FX2);
@@ -275,21 +191,18 @@ for dd = datenum(start_date):datenum(end_date)
         % Figure 4: time-amplitude for X, Y, Z
         figure(4);
         subplot(3,1,1);
-        plot(tA,XA,'b.'); %,tt,Q3X,'k-',tt,Q1X,'k--');
+        plot(tA,XA,'b.');
         xlabel('time');
         ylabel('X');
         datetick('x','HH:MM');
         ax = axis;
         Q3 = quantile(XA,1-r_normal);
         Q1 = quantile(XA,r_normal);
-        %axis([ax(1), ceil(ax(1)+1/86400), Q1-1.5*(Q3-Q1), Q3+1.5*(Q3-Q1)]);
         axis([ax(1), min([ax(2),ceil(ax(1)+1/86400)]), Q1-1.5*(Q3-Q1), Q3+1.5*(Q3-Q1)]);
-        %xlim([ax(1), ceil(ax(1)+1/86400)]);
-        %ylim([-2.5 2.5]);
         title(sprintf('Date: %s',datestr(tt(1),29)));
         
         subplot(3,1,2);
-        plot(tA,YA,'g.'); %,tt,Q3Y,'k-',tt,Q1Y,'k--');
+        plot(tA,YA,'g.');
         xlabel('time');
         ylabel('Y');
         datetick('x','HH:MM');
@@ -302,11 +215,9 @@ for dd = datenum(start_date):datenum(end_date)
             Q1 = -0.5;
         end
         axis([ax(1), min([ax(2),ceil(ax(1)+1/86400)]), Q1-1.5*(Q3-Q1), Q3+1.5*(Q3-Q1)]);
-        %xlim([ax(1), min([ax(2),ceil(ax(1)+1/86400)])]);
-        %ylim([-2.5 2.5]);
         
         subplot(3,1,3);
-        plot(tA,ZA,'r.'); %,tt,Q3Z,'k-',tt,Q1Z,'k--');
+        plot(tA,ZA,'r.');
         xlabel('time');
         ylabel('Z');
         datetick('x','HH:MM');
@@ -319,9 +230,6 @@ for dd = datenum(start_date):datenum(end_date)
             Q1 = -0.5;
         end
         axis([ax(1), min([ax(2),ceil(ax(1)+1/86400)]), Q1-1.5*(Q3-Q1), Q3+1.5*(Q3-Q1)]);
-        %xlim([ax(1), min([ax(2),ceil(ax(1)+1/86400)])]);
-        %ylim([-2.5 2.5]);
-        
         print([dirnum '-' date_string '_T.jpg'],'-djpeg')
         
         %
@@ -331,33 +239,15 @@ for dd = datenum(start_date):datenum(end_date)
         ylabel('Effective Data Rate');
         datetick('x','HH:MM');
         ax = axis;
-        axis([ax(1), min([ax(2),ceil(ax(1)+1/86400)]), 0, 1.2]); 
-        %axis([ax(1), min([ax(2),ceil(ax(1)+1/86400)]), 0, 1]);    
+        axis([ax(1), min([ax(2),ceil(ax(1)+1/86400)]), 0, 1.2]);     
         print([dirnum '-' date_string '_N.jpg'],'-djpeg')
-        intfreqX = mean(FX2,2);
-        intfreqY = mean(FY2,2);
-        intfreqZ = mean(FZ2,2);
-        
-        for i = 1:199
-            intfreqX = [intfreqX; mean(FX2((i*300-10:i*300+10),:))];
-            intfreqY = [intfreqY; mean(FY2((i*300-10:i*300+10),:))];
-            intfreqZ = [intfreqZ; mean(FZ2((i*300-10:i*300+10),:))];
-        end
-        intfreqX = [intfreqX; mean(FX2((end-10:end),:))];
-        intfreqY = [intfreqY; mean(FY2((end-10:end),:))];
-        intfreqZ = [intfreqZ; mean(FZ2((end-10:end),:))];
-        
-        intfreqX2 = [];intfreqY2 = [];intfreqZ2 = [];
-        intfreqX2 = [intfreqX2; FX2(300:300:60000,:)];
-        intfreqY2 = [intfreqY2; FY2(300:300:60000,:)];
-        intfreqZ2 = [intfreqZ2; FZ2(300:300:60000,:)];
-        
+        %}
         intfreqX = FX2;
         intfreqY = FY2;
         intfreqZ = FZ2;
-        % save all data 
-        eval(sprintf('save %s-%s-%s.mat tt f0 FX2 FY2 FZ2 tA XA YA ZA',dirnum,date_string,'basicinfo'));
-        eval(sprintf('save %s-%s-%s.mat EX EY EZ Amp_meanX Amp_meanY Amp_meanZ Amp_varX Amp_varY Amp_varZ intfreqX intfreqY intfreqZ N_original',dirnum,date_string,'features'));
+        %save all data 
+        %eval(sprintf('save %s-%s-%s.mat tt f0 FX2 FY2 FZ2 tA XA YA ZA',dirnum,date_string,'basicinfo'));
+        eval(sprintf('save %s-%s-%s.mat tt EX EY EZ Amp_meanX Amp_meanY Amp_meanZ Amp_varX Amp_varY Amp_varZ intfreqX intfreqY intfreqZ N_original',dirnum,date_string,'features'));
     end
 end
 diary off
